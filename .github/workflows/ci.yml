@@ -1,0 +1,65 @@
+# =============================================================================
+# CI – Clinical Risk Score Tests
+# =============================================================================
+#
+# This workflow runs the full test suite on every push (or pull request) to
+# the main branch.  A push is only accepted when ALL tests pass.
+#
+# How it works:
+#   1. GitHub checks out the repository code.
+#   2. Python 3.11 is installed on a fresh Ubuntu runner.
+#   3. Project dependencies (Flask + pytest) are installed.
+#   4. pytest runs every test in test_calculators.py.
+#   5. If any test fails the workflow exits with a non-zero status, and the
+#      push/PR is blocked (when branch protection is enabled).
+#
+# =============================================================================
+
+name: CI – Run All Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# Explicitly restrict the default GITHUB_TOKEN to read-only permissions.
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Run pytest test suite
+    runs-on: ubuntu-latest
+
+    steps:
+      # -----------------------------------------------------------------------
+      # 1. Check out repository code
+      # -----------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # 2. Set up Python
+      # -----------------------------------------------------------------------
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # -----------------------------------------------------------------------
+      # 3. Install dependencies
+      # -----------------------------------------------------------------------
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # -----------------------------------------------------------------------
+      # 4. Run tests
+      #    --tb=short  – show short tracebacks for failures
+      #    -v          – verbose output (one line per test)
+      # -----------------------------------------------------------------------
+      - name: Run tests with pytest
+        run: |
+          pytest test_calculators.py -v --tb=short
